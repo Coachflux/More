@@ -446,21 +446,17 @@ const PlayerManager = {
     isPlaying: false,
 
     // Multiple backup servers behind one seamless experience
+    // 2Embed is PRIMARY for fastest load. Others are silent backups.
     sources: [
         { 
-            name: 'StreamSrc', 
-            movie: (id) => `https://streamsrc.cc/watch/movie/tmdbid=${id}`,
-            tv: (id, s, e) => `https://streamsrc.cc/watch/series/tmdbid=${id}&season=${s}&episode=${e}`
+            name: '2Embed (Primary)', 
+            movie: (id) => `https://www.2embed.cc/embed/${id}`,
+            tv: (id, s, e) => `https://www.2embed.cc/embedtv/${id}&s=${s}&e=${e}`
         },
         { 
             name: 'Embed.su', 
             movie: (id) => `https://embed.su/embed/movie/${id}`,
             tv: (id, s, e) => `https://embed.su/embed/tv/${id}/${s}/${e}`
-        },
-        { 
-            name: 'VidBinge', 
-            movie: (id) => `https://vidbinge.to/movie/${id}`,
-            tv: (id, s, e) => `https://vidbinge.to/tv/${id}/${s}/${e}`
         },
         { 
             name: 'VidLink', 
@@ -473,9 +469,14 @@ const PlayerManager = {
             tv: (id, s, e) => `https://multiembed.mov/directstream.php?video_id=${id}&tmdb=1&s=${s}&e=${e}`
         },
         { 
-            name: '2Embed', 
-            movie: (id) => `https://www.2embed.cc/embed/${id}`,
-            tv: (id, s, e) => `https://www.2embed.cc/embedtv/${id}&s=${s}&e=${e}`
+            name: 'StreamSrc', 
+            movie: (id) => `https://streamsrc.cc/watch/movie/tmdbid=${id}`,
+            tv: (id, s, e) => `https://streamsrc.cc/watch/series/tmdbid=${id}&season=${s}&episode=${e}`
+        },
+        { 
+            name: 'VidBinge', 
+            movie: (id) => `https://vidbinge.to/movie/${id}`,
+            tv: (id, s, e) => `https://vidbinge.to/tv/${id}/${s}/${e}`
         }
     ],
 
