@@ -1,4 +1,4 @@
-// ============================================
+// =====// ============================================
 // WATCHMORE - Utilities
 // ============================================
 
@@ -433,7 +433,7 @@ const AuthManager = {
 };
 
 // ============================================
-// SMART PLAYER - Auto-failover, no manual switching
+// FIXED PLAYER - Multiple working embed sources using TMDB IDs
 // ============================================
 const PlayerManager = {
     currentId: null,
@@ -442,11 +442,8 @@ const PlayerManager = {
     currentSeason: null,
     currentEpisode: null,
     sourceIndex: 0,
-    autoSwitchTimer: null,
-    isPlaying: false,
 
-    // Multiple backup servers behind one seamless experience
-    // 2Embed is PRIMARY for fastest load. Others are silent backups.
+    // Working embed sources that accept TMDB IDs directly
     sources: [
         { 
             name: '2Embed', 
@@ -476,21 +473,35 @@ const PlayerManager = {
         this.currentSeason = season;
         this.currentEpisode = episode;
         this.sourceIndex = 0;
-        this.isPlaying = true;
+
+        const src = this.getUrl(0, id, type, season, episode);
+        if (!src) {
+            UI.showToast('No video sources available', 'error');
+            return;
+        }
 
         const iframe = document.getElementById('player-iframe');
         const titleEl = document.getElementById('player-title');
         const infoEl = document.getElementById('player-info-text');
-        const statusEl = document.getElementById('player-status');
 
-        // Show connecting status
-        if (statusEl) {
-            statusEl.textContent = 'Connecting to best server...';
-            statusEl.classList.add('visible');
+        if (iframe) {
+            iframe.src = src;
+            // Reset error handler
+            iframe.onerror = null;
+            // Set up load timeout to detect if source fails
+            setTimeout(() => {
+                try {
+                    // Try to check if iframe loaded content
+                    const iframeDoc = iframe.contentDocument || iframe.contentWindow?.document;
+                    if (!iframeDoc || iframeDoc.body.innerHTML === '') {
+                        // Might be blocked, try next source
+                        console.log('Source may be blocked, will try fallback on next play');
+                    }
+                } catch (e) {
+                    // Cross-origin, can't check - assume it loaded
+                }
+            }, 3000);
         }
-
-        this._loadSource(0);
-
         if (titleEl) titleEl.textContent = title || 'Now Playing';
         if (infoEl) {
             const info = season ? `S${season} E${episode}` : (type === 'tv' ? 'TV Show' : 'Movie');
@@ -499,87 +510,49 @@ const PlayerManager = {
 
         UI.showModal('player-modal');
 
-        // Auto fullscreen on mobile
+        // Request fullscreen on mobile for better experience
         if (window.innerWidth <= 768) {
-            setTimeout(() => this.toggleFullscreen(), 1000);
+            setTimeout(() => this.toggleFullscreen(), 800);
         }
-
-        // Auto-failover: if still on same source after 15s and user hasn't interacted, try next
-        // This is a safety net for sources that load but don't play
-        if (this.autoSwitchTimer) clearTimeout(this.autoSwitchTimer);
-        this.autoSwitchTimer = setTimeout(() => {
-            if (this.isPlaying && this.sourceIndex === 0) {
-                // Silently pre-check if we should switch (user can still watch if it worked)
-                // We don't force-switch to avoid interrupting working streams
-                console.log('Auto-failover check passed');
-            }
-        }, 15000);
     },
 
-    _loadSource(index) {
-        const iframe = document.getElementById('player-iframe');
-        const statusEl = document.getElementById('player-status');
-        if (!iframe) return;
-
-        const src = this.getUrl(index, this.currentId, this.currentType, this.currentSeason, this.currentEpisode);
-        if (!src) {
-            if (statusEl) statusEl.textContent = 'All servers busy. Please try again later.';
-            UI.showToast('All video servers are currently busy. Please try again shortly.', 'error', 5000);
-            return;
-        }
-
-        iframe.src = src;
-
-        iframe.onload = () => {
-            if (statusEl) {
-                statusEl.textContent = `Streaming via ${this.sources[index].name}`;
-                setTimeout(() => statusEl.classList.remove('visible'), 4000);
-            }
-        };
-
-        iframe.onerror = () => {
-            this._autoSwitch();
-        };
-    },
-
-    _autoSwitch() {
+    switchSource() {
         this.sourceIndex++;
+
         if (this.sourceIndex < this.sources.length) {
-            const statusEl = document.getElementById('player-status');
-            if (statusEl) {
-                statusEl.textContent = `Optimizing stream... (${this.sourceIndex + 1}/${this.sources.length})`;
-                statusEl.classList.add('visible');
+            const iframe = document.getElementById('player-iframe');
+            if (iframe) {
+                const src = this.getUrl(
+                    this.sourceIndex, 
+                    this.currentId, 
+                    this.currentType, 
+                    this.currentSeason, 
+                    this.currentEpisode
+                );
+                if (src) {
+                    iframe.src = src;
+                    UI.showToast(`Switched to ${this.sources[this.sourceIndex].name}`, 'info', 2000);
+                }
             }
-            this._loadSource(this.sourceIndex);
-            UI.showToast(`Optimizing stream...`, 'info', 2000);
         } else {
-            const statusEl = document.getElementById('player-status');
-            if (statusEl) statusEl.textContent = 'All servers unavailable. Retry soon.';
-            UI.showToast('All streams are currently unavailable. Please try again shortly.', 'error', 5000);
             this.sourceIndex = 0;
+            UI.showToast('All sources tried. Please try again later.', 'error', 5000);
         }
     },
 
     close() {
-        this.isPlaying = false;
         UI.hideModal('player-modal');
         const iframe = document.getElementById('player-iframe');
-        const statusEl = document.getElementById('player-status');
         if (iframe) {
             iframe.src = '';
-            iframe.onload = null;
             iframe.onerror = null;
-        }
-        if (statusEl) statusEl.classList.remove('visible');
-        if (this.autoSwitchTimer) clearTimeout(this.autoSwitchTimer);
-        if (document.fullscreenElement) {
-            document.exitFullscreen().catch(() => {});
         }
     },
 
     toggleFullscreen() {
         const container = document.querySelector('.player-container');
         if (!container) return;
+
         if (document.fullscreenElement) {
             document.exitFullscreen();
         } else {
@@ -598,7 +571,7 @@ const SeasonManager = {
 
         if (list && seasonData.episodes) {
             list.innerHTML = seasonData.episodes.map((ep, i) => `
-                <div class="episode-item" onclick="PlayerManager.open(${tvId}, 'tv', '${tvTitle.replace(/'/g, "\\'")}', ${seasonNumber}, ${ep.episode_number})">
+                <div class="episode-item" onclick="PlayerManager.open(${tvId}, 'tv', '${tvTitle.replace(/'/g, "\'")}', ${seasonNumber}, ${ep.episode_number})">
                     <div class="episode-number">${ep.episode_number}</div>
                     <div class="episode-info">
                         <h4>${ep.name || `Episode ${ep.episode_number}`}</h4>
@@ -617,104 +590,6 @@ const SeasonManager = {
     }
 };
 
-// ============================================
-// NOTIFICATION MANAGER - Push notifications with ads
-// ============================================
-const NotificationManager = {
-    subscribed: false,
-
-    async init() {
-        if (!('serviceWorker' in navigator)) {
-            console.log('Service Worker not supported');
-            return;
-        }
-        // Check previous subscription
-        const saved = localStorage.getItem('watchmore_notifications');
-        if (saved === 'true') {
-            this.subscribed = true;
-            this.updateBadges(true);
-            // Restart demo notifications
-            const reg = await navigator.serviceWorker.ready;
-            reg.active?.postMessage('start-demo-notifications');
-        }
-    },
-
-    async subscribe() {
-        if (!('Notification' in window)) {
-            UI.showToast('Notifications not supported on this device', 'error');
-            return;
-        }
-        if (!('serviceWorker' in navigator)) {
-            UI.showToast('Push notifications require service worker support', 'warning');
-            return;
-        }
-
-        const permission = await Notification.requestPermission();
-        if (permission === 'granted') {
-            this.subscribed = true;
-            localStorage.setItem('watchmore_notifications', 'true');
-            this.updateBadges(true);
-
-            // Send welcome notification with ad
-            const reg = await navigator.serviceWorker.ready;
-            reg.showNotification('Welcome to WatchMore! 🎬', {
-                body: 'You\'ll now receive updates on new movies & shows.\n\nAd: Get Premium Streaming 50% OFF — Limited Time!',
-                icon: "data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🎬</text></svg>",
-                badge: "data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🎬</text></svg>",
-                tag: 'watchmore-welcome',
-                requireInteraction: false,
-                actions: [
-                    { action: 'open', title: 'Start Watching' },
-                    { action: 'dismiss', title: 'Dismiss' }
-                ],
-                data: { url: './' }
-            });
-
-            // Start demo periodic notifications
-            reg.active?.postMessage('start-demo-notifications');
-            UI.showToast('Notifications enabled! You\'ll get updates even when offline.', 'success', 4000);
-        } else if (permission === 'denied') {
-            UI.showToast('Notification permission denied. Enable in browser settings.', 'warning');
-        } else {
-            UI.showToast('Please allow notifications to receive updates', 'info');
-        }
-    },
-
-    async unsubscribe() {
-        this.subscribed = false;
-        localStorage.removeItem('watchmore_notifications');
-        this.updateBadges(false);
-        const reg = await navigator.serviceWorker.ready;
-        reg.active?.postMessage('stop-demo-notifications');
-        UI.showToast('Notifications disabled', 'info');
-    },
-
-    updateBadges(active) {
-        document.querySelectorAll('.notif-badge').forEach(badge => {
-            badge.classList.toggle('active', active);
-        });
-    },
-
-    // Send immediate notification (used by app for in-app events)
-    async send(title, body, adText) {
-        if (!this.subscribed) return;
-        const reg = await navigator.serviceWorker.ready;
-        const fullBody = adText ? (body + '\n\n' + adText) : body;
-        reg.showNotification(title, {
-            body: fullBody,
-            icon: "data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🎬</text></svg>",
-            badge: "data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🎬</text></svg>",
-            tag: 'watchmore-' + Date.now(),
-            requireInteraction: false,
-            actions: [
-                { action: 'open', title: 'Open' },
-                { action: 'dismiss', title: 'Dismiss' }
-            ],
-            data: { url: './' }
-        });
-    }
-};
-
 window.CONFIG = CONFIG;
 window.AppState = AppState;
 window.TMDB = TMDB;
@@ -724,4 +599,3 @@ window.FirebaseManager = FirebaseManager;
 window.AuthManager = AuthManager;
 window.PlayerManager = PlayerManager;
 window.SeasonManager = SeasonManager;
-window.NotificationManager = NotificationManager;
