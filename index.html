@@ -7,9 +7,17 @@
     <meta name="theme-color" content="#0a0a0f">
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="WatchMore">
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="application-name" content="WatchMore">
+
     <title>WatchMore - Movies & TV Shows</title>
 
     <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🎬</text></svg>">
+    <link rel="apple-touch-icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 180 180'><rect fill='%23e50914' width='180' height='180' rx='30'/><text x='50%25' y='55%25' dominant-baseline='middle' text-anchor='middle' font-size='100' font-family='Arial'>🎬</text></svg>">
+
+    <!-- PWA Manifest -->
+    <link rel="manifest" href="manifest.json">
 
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -32,6 +40,9 @@
                 <span class="logo-text">Watch<span>More</span></span>
             </div>
             <div class="mobile-actions">
+                <button class="mobile-icon-btn" onclick="ReportManager.show()" title="Report Issue">
+                    <i class="fas fa-flag"></i>
+                </button>
                 <button class="mobile-icon-btn" onclick="NotificationManager.subscribe()" title="Notifications">
                     <i class="fas fa-bell"></i>
                     <span class="notif-badge" id="mobile-notif-badge"></span>
@@ -84,6 +95,10 @@
 
             <div class="sidebar-bottom">
                 <div class="sidebar-divider"></div>
+                <button class="nav-item" onclick="ReportManager.show()">
+                    <div class="nav-icon-wrap"><i class="fas fa-flag"></i></div>
+                    <span class="nav-label">Report Issue</span>
+                </button>
                 <button class="nav-item" onclick="toggleTheme()">
                     <div class="nav-icon-wrap"><i class="fas fa-moon" id="theme-icon"></i></div>
                     <span class="nav-label">Theme</span>
@@ -105,6 +120,9 @@
                     <span class="search-shortcut">⌘K</span>
                 </div>
                 <div class="top-actions">
+                    <button class="icon-btn" onclick="ReportManager.show()" title="Report Issue">
+                        <i class="fas fa-flag"></i>
+                    </button>
                     <button class="icon-btn notification-btn" onclick="NotificationManager.subscribe()" title="Enable notifications">
                         <i class="fas fa-bell"></i>
                         <span class="notif-badge" id="desktop-notif-badge"></span>
@@ -179,7 +197,7 @@
                                 <div class="ad-text">📱 Watch on Any Device, Anywhere</div>
                                 <div class="ad-sub">Install our PWA for the best mobile experience</div>
                             </div>
-                            <button class="ad-btn" onclick="UI.showToast('Add to home screen to install','info')">Install</button>
+                            <button class="ad-btn" onclick="InstallManager.install()">Install</button>
                             <span class="ad-label">Ad</span>
                         </div>
 
@@ -452,6 +470,9 @@
                                 <button class="btn btn-primary" onclick="playCurrent()">
                                     <i class="fas fa-play"></i> Play Now
                                 </button>
+                                <button class="btn btn-download" onclick="downloadCurrent()">
+                                    <i class="fas fa-download"></i> Download
+                                </button>
                                 <button class="btn btn-watchlist" id="detail-watchlist-btn" onclick="toggleWatchlistCurrent()">
                                     <i class="fas fa-bookmark"></i> Add to Watchlist
                                 </button>
@@ -541,6 +562,24 @@
         </nav>
     </div>
 
+    <!-- Install Banner -->
+    <div class="install-banner" id="install-banner">
+        <div class="install-banner-content">
+            <div class="install-banner-icon">🎬</div>
+            <div class="install-banner-text" id="install-text">
+                <strong>Install WatchMore</strong> - Add to your home screen for the best experience
+            </div>
+        </div>
+        <div class="install-banner-actions">
+            <button class="install-banner-btn" id="install-btn" onclick="InstallManager.install()">
+                <i class="fas fa-download"></i> Install
+            </button>
+            <button class="install-banner-close" onclick="InstallManager.dismiss()">
+                <i class="fas fa-times"></i>
+            </button>
+        </div>
+    </div>
+
     <!-- Auth Modal -->
     <div class="modal-overlay" id="auth-modal">
         <div class="modal">
@@ -582,7 +621,7 @@
         </div>
     </div>
 
-    <!-- Player Modal -->
+    <!-- Player Modal (Enhanced with Source Switcher) -->
     <div class="player-modal" id="player-modal">
         <div class="player-wrapper">
             <button class="player-close" onclick="closePlayer()"><i class="fas fa-times"></i></button>
@@ -592,12 +631,77 @@
             </div>
             <div class="player-title" id="player-title"></div>
             <div class="player-controls-bar">
-                <span id="player-info-text"></span>
+                <div class="player-source-info">
+                    <span class="player-source-badge" id="player-source-name">2Embed</span>
+                    <span class="player-source-counter" id="player-source-counter">1 / 15</span>
+                </div>
                 <div class="player-controls-right">
+                    <button class="btn btn-sm btn-ghost" onclick="PlayerManager.prevSource()" title="Previous Source">
+                        <i class="fas fa-chevron-left"></i> Prev
+                    </button>
+                    <button class="btn btn-sm btn-ghost" onclick="PlayerManager.switchSource()" title="Next Source">
+                        <i class="fas fa-sync-alt"></i> Switch Source
+                    </button>
                     <button class="btn btn-sm btn-ghost" onclick="PlayerManager.toggleFullscreen()">
                         <i class="fas fa-expand"></i> Fullscreen
                     </button>
                 </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Download Modal -->
+    <div class="modal-overlay" id="download-modal">
+        <div class="modal modal-wide">
+            <button class="modal-close" onclick="DownloadManager.close()"><i class="fas fa-times"></i></button>
+            <div class="modal-header">
+                <div class="modal-logo"><i class="fas fa-download"></i> Download</div>
+                <h2 id="download-title">Download</h2>
+                <p>Choose a download source below</p>
+            </div>
+            <div class="download-links" id="download-links"></div>
+        </div>
+    </div>
+
+    <!-- Report Issue Modal -->
+    <div class="modal-overlay" id="report-modal">
+        <div class="modal">
+            <button class="modal-close" onclick="ReportManager.hide()"><i class="fas fa-times"></i></button>
+            <div class="modal-header">
+                <div class="modal-logo"><i class="fas fa-flag"></i> Report Issue</div>
+                <h2>Report a Problem</h2>
+                <p>Help us improve WatchMore by reporting issues</p>
+            </div>
+            <form id="report-form" onsubmit="ReportManager.submit(event)">
+                <div class="form-group">
+                    <label>Your Name (optional)</label>
+                    <input type="text" id="report-name" placeholder="John Doe">
+                </div>
+                <div class="form-group">
+                    <label>Your Email (optional)</label>
+                    <input type="email" id="report-email" placeholder="you@example.com">
+                </div>
+                <div class="form-group">
+                    <label>Issue Type</label>
+                    <select id="report-type" style="width:100%;padding:14px 18px;border-radius:var(--radius-sm);border:1px solid var(--border);background:var(--bg-input);color:var(--text-primary);font-family:var(--font-body);font-size:14px;outline:none;">
+                        <option value="bug">🐛 Bug / Something not working</option>
+                        <option value="video">🎬 Video won't play / Buffering</option>
+                        <option value="download">📥 Download not working</option>
+                        <option value="request">🎥 Request a Movie / TV Show</option>
+                        <option value="feature">✨ Feature Request</option>
+                        <option value="other">📝 Other</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>Describe the Issue *</label>
+                    <textarea id="report-message" rows="4" placeholder="Please describe what happened, which movie/show, and what you expected..." required style="width:100%;padding:14px 18px;border-radius:var(--radius-sm);border:1px solid var(--border);background:var(--bg-input);color:var(--text-primary);font-family:var(--font-body);font-size:14px;outline:none;resize:vertical;min-height:100px;box-shadow:inset 2px 2px 5px var(--neu-shadow-dark),inset -2px -2px 5px var(--neu-shadow-light);"></textarea>
+                </div>
+                <button type="submit" class="btn btn-primary">
+                    <i class="fas fa-paper-plane"></i> Send Report
+                </button>
+            </form>
+            <div class="modal-footer" style="margin-top:16px;font-size:12px;color:var(--text-muted);">
+                <i class="fas fa-envelope"></i> Reports are sent directly to our support team
             </div>
         </div>
     </div>

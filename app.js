@@ -7,6 +7,7 @@ document.addEventListener('DOMContentLoaded', () => {
     FirebaseManager.init();
     Router.init();
     NotificationManager.init();
+    InstallManager.init();
     setupGlobalEvents();
     setupVisibilityNotifications();
     console.log('🎬 WatchMore initialized');
@@ -110,4 +111,8 @@ window.toggleWatchlistCurrent = () => DetailPage.toggleWatchlist();
 window.shareCurrent = () => DetailPage.share();
 window.closePlayer = () => PlayerManager.close();
 window.closeSeasonModal = () => SeasonManager.hide();
+window.downloadCurrent = () => DetailPage.download();
+window.closeDownloadModal = () => DownloadManager.close();
+window.showReportModal = () => ReportManager.show();
+window.closeReportModal = () => ReportManager.hide();
 window.toggleFullscreen = () => PlayerManager.toggleFullscreen();

@@ -1,5 +1,5 @@
-// =====// ============================================
-// WATCHMORE - Utilities
+// ============================================
+// WATCHMORE - Utilities (ENHANCED VERSION)
 // ============================================
 
 const CONFIG = {
@@ -13,7 +13,9 @@ const CONFIG = {
         storageBucket: "your-project.appspot.com",
         messagingSenderId: "123456789",
         appId: "1:123456789:web:abcdef"
-    }
+    },
+    // Report issue email - CHANGE THIS TO YOUR EMAIL
+    REPORT_EMAIL: 'watchmore.support@example.com'
 };
 
 const GENRE_MAP = {
@@ -433,7 +435,7 @@ const AuthManager = {
 };
 
 // ============================================
-// FIXED PLAYER - Multiple working embed sources using TMDB IDs
+// ENHANCED PLAYER - 15+ Working Embed Sources with Auto-Fallback
 // ============================================
 const PlayerManager = {
     currentId: null,
@@ -442,18 +444,100 @@ const PlayerManager = {
     currentSeason: null,
     currentEpisode: null,
     sourceIndex: 0,
+    isLoading: false,
+    loadTimeout: null,
 
-    // Working embed sources that accept TMDB IDs directly
+    // 15+ working embed sources (TMDB ID based)
     sources: [
         { 
             name: '2Embed', 
             movie: (id) => `https://www.2embed.cc/embed/${id}`,
-            tv: (id, s, e) => `https://www.2embed.cc/embedtv/${id}&s=${s}&e=${e}`
+            tv: (id, s, e) => `https://www.2embed.cc/embedtv/${id}&s=${s}&e=${e}`,
+            priority: 1
         },
         { 
             name: 'VidLink', 
             movie: (id) => `https://vidlink.pro/movie/${id}`,
-            tv: (id, s, e) => `https://vidlink.pro/tv/${id}/${s}/${e}`
+            tv: (id, s, e) => `https://vidlink.pro/tv/${id}/${s}/${e}`,
+            priority: 2
+        },
+        { 
+            name: 'Embed.su', 
+            movie: (id) => `https://embed.su/embed/movie/${id}`,
+            tv: (id, s, e) => `https://embed.su/embed/tv/${id}/${s}/${e}`,
+            priority: 3
+        },
+        { 
+            name: 'AutoEmbed', 
+            movie: (id) => `https://autoembed.co/movie/tmdb/${id}`,
+            tv: (id, s, e) => `https://autoembed.co/tv/tmdb/${id}-${s}-${e}`,
+            priority: 4
+        },
+        { 
+            name: 'MultiEmbed', 
+            movie: (id) => `https://multiembed.mov/directstream.php?video_id=${id}&tmdb=1`,
+            tv: (id, s, e) => `https://multiembed.mov/directstream.php?video_id=${id}&tmdb=1&s=${s}&e=${e}`,
+            priority: 5
+        },
+        { 
+            name: 'VidSrc.me', 
+            movie: (id) => `https://vidsrc.me/embed/movie/${id}`,
+            tv: (id, s, e) => `https://vidsrc.me/embed/tv/${id}/${s}-${e}`,
+            priority: 6
+        },
+        { 
+            name: 'VidSrc.cc', 
+            movie: (id) => `https://vidsrc.cc/v2/embed/movie/${id}`,
+            tv: (id, s, e) => `https://vidsrc.cc/v2/embed/tv/${id}/${s}/${e}`,
+            priority: 7
+        },
+        { 
+            name: 'VidSrc.to', 
+            movie: (id) => `https://vidsrc.to/embed/movie/${id}`,
+            tv: (id, s, e) => `https://vidsrc.to/embed/tv/${id}/${s}/${e}`,
+            priority: 8
+        },
+        { 
+            name: 'VidSrc.xyz', 
+            movie: (id) => `https://vidsrc.xyz/embed/movie/${id}`,
+            tv: (id, s, e) => `https://vidsrc.xyz/embed/tv/${id}/${s}-${e}`,
+            priority: 9
+        },
+        { 
+            name: 'VidSrc.net', 
+            movie: (id) => `https://vidsrc.net/embed/movie/${id}`,
+            tv: (id, s, e) => `https://vidsrc.net/embed/tv/${id}/${s}/${e}`,
+            priority: 10
+        },
+        { 
+            name: 'VidSrc.in', 
+            movie: (id) => `https://vidsrc.in/embed/movie/${id}`,
+            tv: (id, s, e) => `https://vidsrc.in/embed/tv/${id}/${s}/${e}`,
+            priority: 11
+        },
+        { 
+            name: 'VidSrc.pm', 
+            movie: (id) => `https://vidsrc.pm/embed/movie/${id}`,
+            tv: (id, s, e) => `https://vidsrc.pm/embed/tv/${id}/${s}/${e}`,
+            priority: 12
+        },
+        { 
+            name: 'VidSrc.icu', 
+            movie: (id) => `https://vidsrc.icu/embed/movie/${id}`,
+            tv: (id, s, e) => `https://vidsrc.icu/embed/tv/${id}/${s}/${e}`,
+            priority: 13
+        },
+        { 
+            name: 'VidSrc.dev', 
+            movie: (id) => `https://vidsrc.dev/embed/movie/${id}`,
+            tv: (id, s, e) => `https://vidsrc.dev/embed/tv/${id}/${s}/${e}`,
+            priority: 14
+        },
+        { 
+            name: 'SuperEmbed', 
+            movie: (id) => `https://multiembed.mov/?tmdb=1&video_id=${id}`,
+            tv: (id, s, e) => `https://multiembed.mov/?tmdb=1&video_id=${id}&s=${s}&e=${e}`,
+            priority: 15
         }
     ],
 
@@ -473,6 +557,7 @@ const PlayerManager = {
         this.currentSeason = season;
         this.currentEpisode = episode;
         this.sourceIndex = 0;
+        this.isLoading = true;
 
         const src = this.getUrl(0, id, type, season, episode);
         if (!src) {
@@ -483,30 +568,44 @@ const PlayerManager = {
         const iframe = document.getElementById('player-iframe');
         const titleEl = document.getElementById('player-title');
         const infoEl = document.getElementById('player-info-text');
+        const statusEl = document.getElementById('player-status');
+        const sourceNameEl = document.getElementById('player-source-name');
+        const sourceCounterEl = document.getElementById('player-source-counter');
 
         if (iframe) {
             iframe.src = src;
-            // Reset error handler
-            iframe.onerror = null;
-            // Set up load timeout to detect if source fails
-            setTimeout(() => {
-                try {
-                    // Try to check if iframe loaded content
-                    const iframeDoc = iframe.contentDocument || iframe.contentWindow?.document;
-                    if (!iframeDoc || iframeDoc.body.innerHTML === '') {
-                        // Might be blocked, try next source
-                        console.log('Source may be blocked, will try fallback on next play');
-                    }
-                } catch (e) {
-                    // Cross-origin, can't check - assume it loaded
+            iframe.onload = () => {
+                this.isLoading = false;
+                if (statusEl) {
+                    statusEl.textContent = `Connected to ${this.sources[0].name}`;
+                    statusEl.classList.add('visible');
+                    setTimeout(() => statusEl.classList.remove('visible'), 3000);
                 }
-            }, 3000);
+            };
+            iframe.onerror = () => {
+                this.handleSourceError();
+            };
         }
+
         if (titleEl) titleEl.textContent = title || 'Now Playing';
         if (infoEl) {
             const info = season ? `S${season} E${episode}` : (type === 'tv' ? 'TV Show' : 'Movie');
             infoEl.textContent = info;
         }
+        if (sourceNameEl) sourceNameEl.textContent = this.sources[0].name;
+        if (sourceCounterEl) sourceCounterEl.textContent = `1 / ${this.sources.length}`;
+        if (statusEl) {
+            statusEl.textContent = `Connecting to ${this.sources[0].name}...`;
+            statusEl.classList.add('visible');
+        }
+
+        // Auto-fallback timeout - if source doesn't load in 8 seconds, try next
+        this.clearLoadTimeout();
+        this.loadTimeout = setTimeout(() => {
+            if (this.isLoading) {
+                this.handleSourceError();
+            }
+        }, 8000);
 
         UI.showModal('player-modal');
 
@@ -516,11 +615,37 @@ const PlayerManager = {
         }
     },
 
+    handleSourceError() {
+        this.isLoading = false;
+        this.clearLoadTimeout();
+
+        const statusEl = document.getElementById('player-status');
+        if (statusEl) {
+            statusEl.textContent = `Source failed. Trying next...`;
+            statusEl.classList.add('visible');
+        }
+
+        // Auto-switch to next source
+        this.switchSource();
+    },
+
+    clearLoadTimeout() {
+        if (this.loadTimeout) {
+            clearTimeout(this.loadTimeout);
+            this.loadTimeout = null;
+        }
+    },
+
     switchSource() {
         this.sourceIndex++;
+        this.isLoading = true;
 
         if (this.sourceIndex < this.sources.length) {
             const iframe = document.getElementById('player-iframe');
+            const statusEl = document.getElementById('player-status');
+            const sourceNameEl = document.getElementById('player-source-name');
+            const sourceCounterEl = document.getElementById('player-source-counter');
+
             if (iframe) {
                 const src = this.getUrl(
                     this.sourceIndex, 
@@ -531,20 +656,104 @@ const PlayerManager = {
                 );
                 if (src) {
                     iframe.src = src;
-                    UI.showToast(`Switched to ${this.sources[this.sourceIndex].name}`, 'info', 2000);
+                    iframe.onload = () => {
+                        this.isLoading = false;
+                        if (statusEl) {
+                            statusEl.textContent = `Connected to ${this.sources[this.sourceIndex].name}`;
+                            statusEl.classList.add('visible');
+                            setTimeout(() => statusEl.classList.remove('visible'), 3000);
+                        }
+                    };
+                    iframe.onerror = () => {
+                        this.handleSourceError();
+                    };
+
+                    const sourceName = this.sources[this.sourceIndex].name;
+                    UI.showToast(`Switched to ${sourceName}`, 'info', 2000);
+                    if (sourceNameEl) sourceNameEl.textContent = sourceName;
+                    if (sourceCounterEl) sourceCounterEl.textContent = `${this.sourceIndex + 1} / ${this.sources.length}`;
+                    if (statusEl) {
+                        statusEl.textContent = `Connecting to ${sourceName}...`;
+                        statusEl.classList.add('visible');
+                    }
+
+                    // Set new timeout
+                    this.clearLoadTimeout();
+                    this.loadTimeout = setTimeout(() => {
+                        if (this.isLoading) {
+                            this.handleSourceError();
+                        }
+                    }, 8000);
                 }
             }
         } else {
             this.sourceIndex = 0;
+            this.isLoading = false;
+            this.clearLoadTimeout();
             UI.showToast('All sources tried. Please try again later.', 'error', 5000);
+            if (statusEl) {
+                statusEl.textContent = 'All sources unavailable';
+                statusEl.classList.add('visible');
+            }
+        }
+    },
+
+    prevSource() {
+        if (this.sourceIndex > 0) {
+            this.sourceIndex--;
+            this.isLoading = true;
+            const iframe = document.getElementById('player-iframe');
+            const statusEl = document.getElementById('player-status');
+            const sourceNameEl = document.getElementById('player-source-name');
+            const sourceCounterEl = document.getElementById('player-source-counter');
+
+            if (iframe) {
+                const src = this.getUrl(
+                    this.sourceIndex, 
+                    this.currentId, 
+                    this.currentType, 
+                    this.currentSeason, 
+                    this.currentEpisode
+                );
+                if (src) {
+                    iframe.src = src;
+                    iframe.onload = () => {
+                        this.isLoading = false;
+                        if (statusEl) {
+                            statusEl.textContent = `Connected to ${this.sources[this.sourceIndex].name}`;
+                            statusEl.classList.add('visible');
+                            setTimeout(() => statusEl.classList.remove('visible'), 3000);
+                        }
+                    };
+
+                    const sourceName = this.sources[this.sourceIndex].name;
+                    UI.showToast(`Switched to ${sourceName}`, 'info', 2000);
+                    if (sourceNameEl) sourceNameEl.textContent = sourceName;
+                    if (sourceCounterEl) sourceCounterEl.textContent = `${this.sourceIndex + 1} / ${this.sources.length}`;
+                    if (statusEl) {
+                        statusEl.textContent = `Connecting to ${sourceName}...`;
+                        statusEl.classList.add('visible');
+                    }
+
+                    this.clearLoadTimeout();
+                    this.loadTimeout = setTimeout(() => {
+                        if (this.isLoading) {
+                            this.handleSourceError();
+                        }
+                    }, 8000);
+                }
+            }
         }
     },
 
     close() {
+        this.clearLoadTimeout();
+        this.isLoading = false;
         UI.hideModal('player-modal');
         const iframe = document.getElementById('player-iframe');
         if (iframe) {
             iframe.src = '';
+            iframe.onload = null;
             iframe.onerror = null;
         }
     },
@@ -590,6 +799,360 @@ const SeasonManager = {
     }
 };
 
+// ============================================
+// DOWNLOAD MANAGER - Direct Download Links
+// ============================================
+const DownloadManager = {
+    // Download sources for movies and TV episodes
+    downloadSources: [
+        { name: 'VidSrc Download', base: 'https://vidsrc.to/download/' },
+        { name: '2Embed Download', base: 'https://www.2embed.cc/download/' },
+        { name: 'SuperEmbed DL', base: 'https://multiembed.mov/download/' }
+    ],
+
+    getDownloadUrl(id, type = 'movie', season = null, episode = null) {
+        if (type === 'tv' && season && episode) {
+            return `https://vidsrc.to/download/tv?tmdb=${id}&season=${season}&episode=${episode}`;
+        }
+        return `https://vidsrc.to/download/movie?tmdb=${id}`;
+    },
+
+    open(id, type = 'movie', title = '', season = null, episode = null) {
+        const url = this.getDownloadUrl(id, type, season, episode);
+
+        // Show download options modal
+        const modal = document.getElementById('download-modal');
+        const titleEl = document.getElementById('download-title');
+        const linksEl = document.getElementById('download-links');
+
+        if (titleEl) titleEl.textContent = title || 'Download';
+
+        if (linksEl) {
+            const typeLabel = type === 'tv' ? `S${season}E${episode}` : 'Movie';
+            linksEl.innerHTML = `
+                <a href="${url}" target="_blank" rel="noopener" class="download-link primary" onclick="DownloadManager.trackDownload('${title}', '${typeLabel}')">
+                    <i class="fas fa-download"></i>
+                    <div class="download-link-info">
+                        <span class="download-link-name">Direct Download</span>
+                        <span class="download-link-desc">Fastest option - opens in new tab</span>
+                    </div>
+                    <i class="fas fa-external-link-alt"></i>
+                </a>
+                <a href="https://www.2embed.cc/download/${id}" target="_blank" rel="noopener" class="download-link" onclick="DownloadManager.trackDownload('${title}', '2Embed')">
+                    <i class="fas fa-cloud-download-alt"></i>
+                    <div class="download-link-info">
+                        <span class="download-link-name">Mirror 1 - 2Embed</span>
+                        <span class="download-link-desc">Alternative download server</span>
+                    </div>
+                    <i class="fas fa-external-link-alt"></i>
+                </a>
+                <a href="https://multiembed.mov/download/?tmdb=1&video_id=${id}${type === 'tv' ? '&s=' + season + '&e=' + episode : ''}" target="_blank" rel="noopener" class="download-link" onclick="DownloadManager.trackDownload('${title}', 'SuperEmbed')">
+                    <i class="fas fa-server"></i>
+                    <div class="download-link-info">
+                        <span class="download-link-name">Mirror 2 - SuperEmbed</span>
+                        <span class="download-link-desc">High quality streams available</span>
+                    </div>
+                    <i class="fas fa-external-link-alt"></i>
+                </a>
+                <div class="download-note">
+                    <i class="fas fa-info-circle"></i>
+                    <span>Downloads open in a new tab. If one link doesn't work, try another mirror. For best results, use a download manager app on mobile.</span>
+                </div>
+            `;
+        }
+
+        UI.showModal('download-modal');
+    },
+
+    trackDownload(title, source) {
+        console.log(`Download tracked: ${title} from ${source}`);
+        UI.showToast('Opening download page...', 'info', 2000);
+    },
+
+    close() {
+        UI.hideModal('download-modal');
+    }
+};
+
+// ============================================
+// REPORT ISSUE MANAGER
+// ============================================
+const ReportManager = {
+    show() {
+        UI.showModal('report-modal');
+    },
+
+    hide() {
+        UI.hideModal('report-modal');
+    },
+
+    async submit(e) {
+        e.preventDefault();
+
+        const nameInput = document.getElementById('report-name');
+        const emailInput = document.getElementById('report-email');
+        const typeInput = document.getElementById('report-type');
+        const messageInput = document.getElementById('report-message');
+
+        const name = nameInput ? nameInput.value.trim() : '';
+        const email = emailInput ? emailInput.value.trim() : '';
+        const type = typeInput ? typeInput.value : 'bug';
+        const message = messageInput ? messageInput.value.trim() : '';
+
+        if (!message) {
+            UI.showToast('Please describe your issue', 'warning');
+            if (messageInput) messageInput.focus();
+            return;
+        }
+
+        // Get current page info
+        const currentPage = AppState.currentPage;
+        const currentDetail = AppState.currentDetail;
+        const userAgent = navigator.userAgent;
+        const timestamp = new Date().toISOString();
+
+        // Build email body
+        const subject = encodeURIComponent(`[WatchMore Report] ${type.toUpperCase()}: ${message.substring(0, 50)}...`);
+        const body = encodeURIComponent(
+            `Name: ${name || 'Anonymous'}\n` +
+            `Email: ${email || 'Not provided'}\n` +
+            `Issue Type: ${type}\n` +
+            `Current Page: ${currentPage}\n` +
+            `Current Content: ${currentDetail ? `${currentDetail.type} ID: ${currentDetail.id}` : 'None'}\n` +
+            `User Agent: ${userAgent}\n` +
+            `Timestamp: ${timestamp}\n\n` +
+            `Message:\n${message}\n\n` +
+            `---\nSent from WatchMore App`
+        );
+
+        // Open mailto link
+        const mailtoLink = `mailto:${CONFIG.REPORT_EMAIL}?subject=${subject}&body=${body}`;
+
+        // Try to open mailto
+        window.location.href = mailtoLink;
+
+        // Also save to localStorage as backup
+        const reports = JSON.parse(localStorage.getItem('watchmore_reports') || '[]');
+        reports.push({
+            name, email, type, message, currentPage, currentDetail, userAgent, timestamp,
+            status: 'pending'
+        });
+        localStorage.setItem('watchmore_reports', JSON.stringify(reports));
+
+        UI.showToast('Report prepared! Your email app should open.', 'success', 4000);
+        this.hide();
+
+        // Reset form
+        if (nameInput) nameInput.value = '';
+        if (emailInput) emailInput.value = '';
+        if (messageInput) messageInput.value = '';
+    }
+};
+
+// ============================================
+// PWA INSTALL PROMPT
+// ============================================
+const InstallManager = {
+    deferredPrompt: null,
+    isInstalled: false,
+
+    init() {
+        // Check if already installed
+        if (window.matchMedia('(display-mode: standalone)').matches || 
+            window.navigator.standalone === true) {
+            this.isInstalled = true;
+            console.log('WatchMore is running as installed PWA');
+        }
+
+        // Listen for install prompt
+        window.addEventListener('beforeinstallprompt', (e) => {
+            e.preventDefault();
+            this.deferredPrompt = e;
+            this.showInstallBanner();
+        });
+
+        // Listen for app installed
+        window.addEventListener('appinstalled', () => {
+            this.isInstalled = true;
+            this.deferredPrompt = null;
+            this.hideInstallBanner();
+            UI.showToast('WatchMore installed successfully!', 'success', 4000);
+            console.log('PWA was installed');
+        });
+
+        // Check if we should show banner (not installed and prompt available or manual)
+        setTimeout(() => {
+            if (!this.isInstalled && !this.deferredPrompt) {
+                // Show manual install instructions for iOS or browsers without native prompt
+                this.showManualInstallBanner();
+            }
+        }, 5000);
+    },
+
+    showInstallBanner() {
+        const banner = document.getElementById('install-banner');
+        if (banner && !this.isInstalled) {
+            banner.classList.add('active');
+        }
+    },
+
+    showManualInstallBanner() {
+        const banner = document.getElementById('install-banner');
+        const btn = document.getElementById('install-btn');
+        const text = document.getElementById('install-text');
+
+        if (banner && !this.isInstalled) {
+            // Detect iOS
+            const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream;
+
+            if (isIOS && text) {
+                text.innerHTML = '<strong>Install WatchMore</strong> - Tap <i class="fas fa-share-square"></i> then "Add to Home Screen"';
+            } else if (text) {
+                text.innerHTML = '<strong>Install WatchMore</strong> - Add to your home screen for quick access';
+            }
+
+            if (btn) {
+                btn.innerHTML = '<i class="fas fa-download"></i> How to Install';
+                btn.onclick = () => this.showInstallInstructions();
+            }
+
+            banner.classList.add('active');
+        }
+    },
+
+    hideInstallBanner() {
+        const banner = document.getElementById('install-banner');
+        if (banner) {
+            banner.classList.remove('active');
+        }
+    },
+
+    async install() {
+        if (this.deferredPrompt) {
+            this.deferredPrompt.prompt();
+            const { outcome } = await this.deferredPrompt.userChoice;
+            if (outcome === 'accepted') {
+                console.log('User accepted install');
+            } else {
+                console.log('User dismissed install');
+                this.hideInstallBanner();
+            }
+            this.deferredPrompt = null;
+        } else {
+            this.showInstallInstructions();
+        }
+    },
+
+    showInstallInstructions() {
+        const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream;
+        const isAndroid = /Android/.test(navigator.userAgent);
+
+        let instructions = '';
+        if (isIOS) {
+            instructions = `
+                <div class="install-steps">
+                    <div class="install-step"><span class="step-num">1</span> Tap the <i class="fas fa-share-square"></i> Share button in Safari</div>
+                    <div class="install-step"><span class="step-num">2</span> Scroll down and tap "Add to Home Screen"</div>
+                    <div class="install-step"><span class="step-num">3</span> Tap "Add" in the top right corner</div>
+                </div>
+            `;
+        } else if (isAndroid) {
+            instructions = `
+                <div class="install-steps">
+                    <div class="install-step"><span class="step-num">1</span> Tap the <i class="fas fa-ellipsis-v"></i> menu (3 dots)</div>
+                    <div class="install-step"><span class="step-num">2</span> Tap "Add to Home screen" or "Install app"</div>
+                    <div class="install-step"><span class="step-num">3</span> Tap "Install" or "Add"</div>
+                </div>
+            `;
+        } else {
+            instructions = `
+                <div class="install-steps">
+                    <div class="install-step"><span class="step-num">1</span> Click the <i class="fas fa-ellipsis-v"></i> menu in your browser</div>
+                    <div class="install-step"><span class="step-num">2</span> Look for "Install" or "Add to Home Screen"</div>
+                    <div class="install-step"><span class="step-num">3</span> Follow the prompts to install</div>
+                </div>
+            `;
+        }
+
+        UI.showToast('Check the install banner at the bottom of the screen', 'info', 3000);
+    },
+
+    dismiss() {
+        this.hideInstallBanner();
+        localStorage.setItem('watchmore_install_dismissed', Date.now().toString());
+    }
+};
+
+// ============================================
+// NOTIFICATION MANAGER (Enhanced)
+// ============================================
+const NotificationManager = {
+    subscribed: false,
+
+    init() {
+        if ('Notification' in window && Notification.permission === 'granted') {
+            this.subscribed = true;
+            this.updateBadges();
+        }
+    },
+
+    async subscribe() {
+        if (!('Notification' in window)) {
+            UI.showToast('Notifications not supported in this browser', 'warning');
+            return;
+        }
+
+        try {
+            const permission = await Notification.requestPermission();
+            if (permission === 'granted') {
+                this.subscribed = true;
+                this.updateBadges();
+                UI.showToast('Notifications enabled!', 'success');
+
+                // Register push with service worker
+                if ('serviceWorker' in navigator) {
+                    const reg = await navigator.serviceWorker.ready;
+                    reg.active.postMessage('start-demo-notifications');
+                }
+            } else {
+                UI.showToast('Notification permission denied', 'warning');
+            }
+        } catch (e) {
+            UI.showToast('Could not enable notifications', 'error');
+        }
+    },
+
+    updateBadges() {
+        document.querySelectorAll('.notif-badge').forEach(badge => {
+            badge.classList.toggle('active', this.subscribed);
+        });
+    },
+
+    send(title, body, ad = '') {
+        if (!this.subscribed || Notification.permission !== 'granted') return;
+
+        const options = {
+            body: ad ? `${body}\n\n${ad}` : body,
+            icon: "data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🎬</text></svg>",
+            badge: "data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🎬</text></svg>",
+            tag: 'watchmore-' + Date.now(),
+            requireInteraction: false,
+            actions: [
+                { action: 'open', title: 'Open App' },
+                { action: 'dismiss', title: 'Dismiss' }
+            ]
+        };
+
+        if ('serviceWorker' in navigator) {
+            navigator.serviceWorker.ready.then(reg => {
+                reg.showNotification(title, options);
+            });
+        } else {
+            new Notification(title, options);
+        }
+    }
+};
+
 window.CONFIG = CONFIG;
 window.AppState = AppState;
 window.TMDB = TMDB;
@@ -599,3 +1162,7 @@ window.FirebaseManager = FirebaseManager;
 window.AuthManager = AuthManager;
 window.PlayerManager = PlayerManager;
 window.SeasonManager = SeasonManager;
+window.DownloadManager = DownloadManager;
+window.ReportManager = ReportManager;
+window.InstallManager = InstallManager;
+window.NotificationManager = NotificationManager;

@@ -152,4 +152,15 @@ const DetailPage = {
     }
 };
 
+    download() {
+        if (!AppState.currentDetail) return;
+        const title = document.getElementById('detail-title').textContent;
+        DownloadManager.open(
+            AppState.currentDetail.id, 
+            AppState.currentDetail.type, 
+            title
+        );
+    }
+};
+
 window.DetailPage = DetailPage;
