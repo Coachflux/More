@@ -1,5 +1,5 @@
 // ============================================
-// WATCHMORE - Service Worker & Push Notifications (ENHANCED)
+// WATCHMORE - Service Worker & Push Notifications
 // ============================================
 
 const CACHE_NAME = 'watchmore-v3';
@@ -17,81 +17,27 @@ const ASSETS = [
   './library.js',
   './detail.js',
   './ai.js',
-  './app.js',
-  './ads-config.js',
-  './manifest.json'
+  './app.js'
 ];
 
 const ICON = "data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🎬</text></svg>";
 
 self.addEventListener('install', e => {
-  e.waitUntil(
-    caches.open(CACHE_NAME).then(c => c.addAll(ASSETS)).catch(err => {
-      console.log('Cache addAll failed:', err);
-      // Continue even if some assets fail
-      return Promise.resolve();
-    })
-  );
+  e.waitUntil(caches.open(CACHE_NAME).then(c => c.addAll(ASSETS)));
   self.skipWaiting();
 });
 
 self.addEventListener('activate', e => {
-  e.waitUntil(
-    caches.keys().then(cacheNames => {
-      return Promise.all(
-        cacheNames
-          .filter(name => name !== CACHE_NAME)
-          .map(name => caches.delete(name))
-      );
-    }).then(() => self.clients.claim())
-  );
+  e.waitUntil(self.clients.claim());
 });
 
 self.addEventListener('fetch', e => {
-  // Skip non-GET requests
-  if (e.request.method !== 'GET') return;
-
-  // Skip external requests (TMDB, embeds, etc.)
-  const url = new URL(e.request.url);
-  if (url.origin !== self.location.origin) {
-    return;
-  }
-
   e.respondWith(
-    caches.match(e.request).then(cached => {
-      if (cached) {
-        // Return cached version but also fetch update in background
-        fetch(e.request).then(response => {
-          if (response && response.status === 200) {
-            caches.open(CACHE_NAME).then(cache => {
-              cache.put(e.request, response);
-            });
-          }
-        }).catch(() => {});
-        return cached;
-      }
-
-      return fetch(e.request).then(response => {
-        if (!response || response.status !== 200 || response.type !== 'basic') {
-          return response;
-        }
-        const responseToCache = response.clone();
-        caches.open(CACHE_NAME).then(cache => {
-          cache.put(e.request, responseToCache);
-        });
-        return response;
-      }).catch(() => {
-        // If fetch fails and we have no cache, return offline page
-        if (e.request.mode === 'navigate') {
-          return caches.match('./index.html');
-        }
-        return new Response('Offline', { status: 503 });
-      });
-    })
+    caches.match(e.request).then(res => res || fetch(e.request))
   );
 });
 
-// Push notification handler
+// Push notification handler (works when browser receives push from server)
 self.addEventListener('push', e => {
   const data = e.data ? e.data.json() : {};
   const title = data.title || 'WatchMore';
@@ -128,7 +74,7 @@ self.addEventListener('notificationclick', e => {
   );
 });
 
-// Demo periodic notifications
+// Demo periodic notifications from main thread message
 let notifTimer = null;
 self.addEventListener('message', e => {
   if (e.data === 'start-demo-notifications') {
@@ -153,7 +99,7 @@ self.addEventListener('message', e => {
         ],
         data: { url: './' }
       });
-    }, 45000);
+    }, 45000); // Demo: every 45 seconds
   }
   if (e.data === 'stop-demo-notifications') {
     if (notifTimer) clearInterval(notifTimer);
