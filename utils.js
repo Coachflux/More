@@ -1,4 +1,4 @@
-// ============================================
+// =====// ============================================
 // WATCHMORE - Utilities
 // ============================================
 
@@ -433,86 +433,7 @@ const AuthManager = {
 };
 
 // ============================================
-// NOTIFICATION MANAGER - NEW
-// ============================================
-const NotificationManager = {
-    subscribed: false,
-
-    init() {
-        if (!('Notification' in window)) {
-            console.log('Notifications not supported');
-            return;
-        }
-        this.subscribed = Notification.permission === 'granted';
-        this.updateBadge();
-    },
-
-    async subscribe() {
-        if (!('Notification' in window)) {
-            UI.showToast('Notifications not supported in this browser', 'warning');
-            return;
-        }
-
-        try {
-            const permission = await Notification.requestPermission();
-
-            if (permission === 'granted') {
-                this.subscribed = true;
-                UI.showToast('Notifications enabled!', 'success');
-                this.updateBadge();
-
-                if ('serviceWorker' in navigator) {
-                    const reg = await navigator.serviceWorker.ready;
-                    if (reg.active) {
-                        reg.active.postMessage('start-demo-notifications');
-                    }
-                }
-            } else if (permission === 'denied') {
-                this.subscribed = false;
-                UI.showToast('Notifications blocked. Enable them in your browser settings, then click the bell again.', 'warning', 6000);
-            } else {
-                this.subscribed = false;
-                UI.showToast('Please allow notifications when prompted', 'info');
-            }
-            this.updateBadge();
-        } catch (err) {
-            console.error('Notification error:', err);
-            UI.showToast('Could not enable notifications', 'error');
-        }
-    },
-
-    updateBadge() {
-        const badges = document.querySelectorAll('.notif-badge');
-        const granted = Notification.permission === 'granted';
-        badges.forEach(b => b.classList.toggle('active', granted));
-    },
-
-    send(title, body, ad = '') {
-        if (!('Notification' in window) || Notification.permission !== 'granted') return;
-
-        const text = ad ? `${body}\n\n${ad}` : body;
-        const icon = "data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🎬</text></svg>";
-
-        const options = {
-            body: text,
-            icon: icon,
-            badge: icon,
-            tag: 'watchmore-' + Date.now(),
-            requireInteraction: false
-        };
-
-        if ('serviceWorker' in navigator) {
-            navigator.serviceWorker.ready.then(reg => reg.showNotification(title, options));
-        } else {
-            new Notification(title, options);
-        }
-    }
-};
-
-window.NotificationManager = NotificationManager;
-
-// ============================================
-// FIXED PLAYER - Multiple sources with auto-fallback
+// FIXED PLAYER - Multiple working embed sources using TMDB IDs
 // ============================================
 const PlayerManager = {
     currentId: null,
@@ -522,12 +443,8 @@ const PlayerManager = {
     currentEpisode: null,
     sourceIndex: 0,
 
+    // Working embed sources that accept TMDB IDs directly
     sources: [
-        { 
-            name: 'VidSrc', 
-            movie: (id) => `https://vidsrc.xyz/embed/movie?tmdb=${id}`,
-            tv: (id, s, e) => `https://vidsrc.xyz/embed/tv?tmdb=${id}&season=${s}&episode=${e}`
-        },
         { 
             name: '2Embed', 
             movie: (id) => `https://www.2embed.cc/embed/${id}`,
@@ -537,11 +454,6 @@ const PlayerManager = {
             name: 'VidLink', 
             movie: (id) => `https://vidlink.pro/movie/${id}`,
             tv: (id, s, e) => `https://vidlink.pro/tv/${id}/${s}/${e}`
-        },
-        {
-            name: 'AutoEmbed',
-            movie: (id) => `https://player.autoembed.cc/movie/${id}`,
-            tv: (id, s, e) => `https://player.autoembed.cc/tv/${id}/${s}/${e}`
         }
     ],
 
@@ -571,46 +483,44 @@ const PlayerManager = {
         const iframe = document.getElementById('player-iframe');
         const titleEl = document.getElementById('player-title');
         const infoEl = document.getElementById('player-info-text');
-        const statusEl = document.getElementById('player-status');
 
         if (iframe) {
             iframe.src = src;
-            iframe.referrerPolicy = 'no-referrer-when-downgrade';
-
-            iframe.onload = () => {
-                if (statusEl) {
-                    statusEl.textContent = `Playing via ${this.sources[this.sourceIndex].name}`;
-                    statusEl.classList.add('visible');
-                    setTimeout(() => statusEl.classList.remove('visible'), 4000);
+            // Reset error handler
+            iframe.onerror = null;
+            // Set up load timeout to detect if source fails
+            setTimeout(() => {
+                try {
+                    // Try to check if iframe loaded content
+                    const iframeDoc = iframe.contentDocument || iframe.contentWindow?.document;
+                    if (!iframeDoc || iframeDoc.body.innerHTML === '') {
+                        // Might be blocked, try next source
+                        console.log('Source may be blocked, will try fallback on next play');
+                    }
+                } catch (e) {
+                    // Cross-origin, can't check - assume it loaded
                 }
-            };
+            }, 3000);
         }
         if (titleEl) titleEl.textContent = title || 'Now Playing';
         if (infoEl) {
             const info = season ? `S${season} E${episode}` : (type === 'tv' ? 'TV Show' : 'Movie');
             infoEl.textContent = info;
         }
-        if (statusEl) {
-            statusEl.textContent = 'Connecting to best server...';
-            statusEl.classList.add('visible');
-        }
 
         UI.showModal('player-modal');
 
-        this._fallbackTimer = setTimeout(() => {
-            if (document.getElementById('player-modal')?.classList.contains('active')) {
-                this.switchSource();
-            }
-        }, 10000);
+        // Request fullscreen on mobile for better experience
+        if (window.innerWidth <= 768) {
+            setTimeout(() => this.toggleFullscreen(), 800);
+        }
     },
 
     switchSource() {
-        if (this._fallbackTimer) clearTimeout(this._fallbackTimer);
         this.sourceIndex++;
 
         if (this.sourceIndex < this.sources.length) {
             const iframe = document.getElementById('player-iframe');
-            const statusEl = document.getElementById('player-status');
             if (iframe) {
                 const src = this.getUrl(
                     this.sourceIndex, 
@@ -621,32 +531,21 @@ const PlayerManager = {
                 );
                 if (src) {
                     iframe.src = src;
-                    if (statusEl) {
-                        statusEl.textContent = `Trying ${this.sources[this.sourceIndex].name}...`;
-                        statusEl.classList.add('visible');
-                    }
-                    UI.showToast(`Switched to ${this.sources[this.sourceIndex].name}`, 'info', 3000);
-
-                    this._fallbackTimer = setTimeout(() => {
-                        if (document.getElementById('player-modal')?.classList.contains('active')) {
-                            this.switchSource();
-                        }
-                    }, 10000);
+                    UI.showToast(`Switched to ${this.sources[this.sourceIndex].name}`, 'info', 2000);
                 }
             }
         } else {
             this.sourceIndex = 0;
-            UI.showToast('All sources unavailable. The embed may be blocked by your browser or the content is not available.', 'error', 6000);
+            UI.showToast('All sources tried. Please try again later.', 'error', 5000);
         }
     },
 
     close() {
-        if (this._fallbackTimer) clearTimeout(this._fallbackTimer);
         UI.hideModal('player-modal');
         const iframe = document.getElementById('player-iframe');
         if (iframe) {
             iframe.src = '';
-            iframe.onload = null;
+            iframe.onerror = null;
         }
     },
 
@@ -668,15 +567,15 @@ const SeasonManager = {
         const title = document.getElementById('season-title');
         const list = document.getElementById('episodes-list');
 
-        if (title) title.textContent = `${tvTitle} — Season ${seasonNumber}`;
+        if (title) title.textContent = `Season ${seasonNumber}`;
 
         if (list && seasonData.episodes) {
-            list.innerHTML = seasonData.episodes.map((ep) => `
-                <div class="episode-item" onclick="PlayerManager.open(${tvId}, 'tv', '${tvTitle.replace(/'/g, "\\'")}', ${seasonNumber}, ${ep.episode_number})">
+            list.innerHTML = seasonData.episodes.map((ep, i) => `
+                <div class="episode-item" onclick="PlayerManager.open(${tvId}, 'tv', '${tvTitle.replace(/'/g, "\'")}', ${seasonNumber}, ${ep.episode_number})">
                     <div class="episode-number">${ep.episode_number}</div>
                     <div class="episode-info">
                         <h4>${ep.name || `Episode ${ep.episode_number}`}</h4>
-                        <p>${ep.overview ? ep.overview.substring(0, 100) + '...' : 'No description available'}</p>
+                        <p>${ep.overview ? ep.overview.substring(0, 80) + '...' : 'No description'}</p>
                     </div>
                     <button class="episode-play"><i class="fas fa-play"></i></button>
                 </div>

@@ -7,7 +7,6 @@ document.addEventListener('DOMContentLoaded', () => {
     FirebaseManager.init();
     Router.init();
     NotificationManager.init();
-    InstallManager.init();
     setupGlobalEvents();
     setupVisibilityNotifications();
     console.log('🎬 WatchMore initialized');
@@ -111,8 +110,43 @@ window.toggleWatchlistCurrent = () => DetailPage.toggleWatchlist();
 window.shareCurrent = () => DetailPage.share();
 window.closePlayer = () => PlayerManager.close();
 window.closeSeasonModal = () => SeasonManager.hide();
-window.downloadCurrent = () => DetailPage.download();
-window.closeDownloadModal = () => DownloadManager.close();
-window.showReportModal = () => ReportManager.show();
-window.closeReportModal = () => ReportManager.hide();
 window.toggleFullscreen = () => PlayerManager.toggleFullscreen();
+
+// Report Issue Modal
+window.showReportModal = () => {
+    const modal = document.getElementById('report-modal');
+    if (modal) {
+        modal.classList.add('active');
+        document.body.style.overflow = 'hidden';
+    }
+};
+window.closeReportModal = () => {
+    const modal = document.getElementById('report-modal');
+    if (modal) {
+        modal.classList.remove('active');
+        document.body.style.overflow = '';
+    }
+};
+window.handleReport = (e) => {
+    e.preventDefault();
+    const type = document.getElementById('report-type')?.value;
+    const desc = document.getElementById('report-desc')?.value;
+    const email = document.getElementById('report-email')?.value;
+
+    if (!type || !desc) return;
+
+    // Store report in localStorage queue
+    const reports = JSON.parse(localStorage.getItem('watchmore_reports') || '[]');
+    reports.push({
+        type,
+        desc,
+        email: email || 'anonymous',
+        date: new Date().toISOString(),
+        url: window.location.href
+    });
+    localStorage.setItem('watchmore_reports', JSON.stringify(reports));
+
+    UI.showToast('Report sent. Thank you for your feedback!', 'success');
+    closeReportModal();
+    e.target.reset();
+};

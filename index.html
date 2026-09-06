@@ -32,7 +32,7 @@
                 <span class="logo-text">Watch<span>More</span></span>
             </div>
             <div class="mobile-actions">
-                <button class="mobile-icon-btn" onclick="NotificationManager.subscribe()" title="Notifications">
+                <button class="mobile-icon-btn" onclick="NotificationManager.toggle()" title="Notifications">
                     <i class="fas fa-bell"></i>
                     <span class="notif-badge" id="mobile-notif-badge"></span>
                 </button>
@@ -88,6 +88,10 @@
                     <div class="nav-icon-wrap"><i class="fas fa-moon" id="theme-icon"></i></div>
                     <span class="nav-label">Theme</span>
                 </button>
+                <button class="nav-item" onclick="showReportModal()">
+                    <div class="nav-icon-wrap"><i class="fas fa-flag"></i></div>
+                    <span class="nav-label">Report</span>
+                </button>
                 <button class="nav-item" id="auth-nav-item" onclick="showAuthModal()">
                     <div class="nav-icon-wrap"><i class="fas fa-user"></i></div>
                     <span class="nav-label">Account</span>
@@ -105,7 +109,7 @@
                     <span class="search-shortcut">⌘K</span>
                 </div>
                 <div class="top-actions">
-                    <button class="icon-btn notification-btn" onclick="NotificationManager.subscribe()" title="Enable notifications">
+                    <button class="icon-btn notification-btn" onclick="NotificationManager.toggle()" title="Enable notifications">
                         <i class="fas fa-bell"></i>
                         <span class="notif-badge" id="desktop-notif-badge"></span>
                     </button>
@@ -594,9 +598,6 @@
             <div class="player-controls-bar">
                 <span id="player-info-text"></span>
                 <div class="player-controls-right">
-                    <button class="btn btn-sm btn-ghost" onclick="PlayerManager.switchSource()" title="Try another server">
-                        <i class="fas fa-sync-alt"></i> Switch Source
-                    </button>
                     <button class="btn btn-sm btn-ghost" onclick="PlayerManager.toggleFullscreen()">
                         <i class="fas fa-expand"></i> Fullscreen
                     </button>
@@ -638,14 +639,47 @@
     <!-- Service Worker Registration -->
     <script>
         if ('serviceWorker' in navigator) {
-            navigator.serviceWorker.register('sw.js', { updateViaCache: 'none' })
-                .then(reg => {
-                    console.log('SW registered:', reg.scope);
-                    // Force update check to bust old caches
-                    reg.update();
-                })
+            navigator.serviceWorker.register('sw.js')
+                .then(reg => console.log('SW registered:', reg.scope))
                 .catch(err => console.log('SW failed:', err));
         }
     </script>
+
+    <!-- Report Issue Modal -->
+    <div class="modal-overlay" id="report-modal">
+        <div class="modal">
+            <button class="modal-close" onclick="closeReportModal()"><i class="fas fa-times"></i></button>
+            <div class="modal-header">
+                <div class="modal-logo">🎬 Watch<span>More</span></div>
+                <h2>Report an Issue</h2>
+                <p>Help us improve your experience</p>
+            </div>
+            <form id="report-form" onsubmit="handleReport(event)">
+                <div class="form-group">
+                    <label>Issue Type</label>
+                    <select id="report-type" required>
+                        <option value="">Select type...</option>
+                        <option value="bug">Bug / App Not Working</option>
+                        <option value="video">Video Won't Play</option>
+                        <option value="content">Wrong / Missing Content</option>
+                        <option value="request">Movie / Show Request</option>
+                        <option value="other">Other</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>Description</label>
+                    <textarea id="report-desc" rows="4" placeholder="Describe the issue in detail..." required></textarea>
+                </div>
+                <div class="form-group">
+                    <label>Your Email (optional)</label>
+                    <input type="email" id="report-email" placeholder="you@example.com">
+                </div>
+                <button type="submit" class="btn btn-primary">
+                    <i class="fas fa-paper-plane"></i> Send Report
+                </button>
+            </form>
+        </div>
+    </div>
+
 </body>
 </html>

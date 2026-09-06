@@ -2,7 +2,7 @@
 // WATCHMORE - Service Worker & Push Notifications
 // ============================================
 
-const CACHE_NAME = 'watchmore-v3';
+const CACHE_NAME = 'watchmore-v2';
 const ASSETS = [
   './',
   './index.html',
