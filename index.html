@@ -744,5 +744,24 @@
                 .catch(err => console.log('SW failed:', err));
         }
     </script>
+
+    <!-- Install Instructions Modal -->
+    <div class="modal-overlay" id="install-instructions-modal">
+        <div class="modal modal-wide">
+            <button class="modal-close" onclick="UI.hideModal('install-instructions-modal')"><i class="fas fa-times"></i></button>
+            <div class="modal-header">
+                <div class="modal-logo">🎬 Watch<span>More</span></div>
+                <h2 id="install-instructions-title">Install WatchMore</h2>
+                <p>Follow these simple steps to install</p>
+            </div>
+            <div class="install-instructions-content" id="install-instructions-content"></div>
+            <div style="padding:0 20px 20px;">
+                <button class="btn btn-primary" style="width:100%;" onclick="UI.hideModal('install-instructions-modal')">
+                    <i class="fas fa-check"></i> Got it!
+                </button>
+            </div>
+        </div>
+    </div>
+
 </body>
 </html>
