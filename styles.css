@@ -2679,3 +2679,285 @@ html, body {
 .hero-slide {
     will-change: opacity, transform;
 }
+
+
+/* ============================================
+   DETAIL PAGE BUTTON FIXES
+   ============================================ */
+.detail-actions .btn {
+    min-width: max-content;
+    flex-shrink: 0;
+}
+.detail-actions .btn span {
+    display: inline;
+}
+.detail-actions .btn-primary {
+    min-width: 110px;
+}
+.detail-actions .btn-download {
+    min-width: 110px;
+}
+.detail-actions .btn-watchlist {
+    min-width: 140px;
+}
+
+/* ============================================
+   DETAIL POSTER FALLBACK
+   ============================================ */
+.detail-poster img {
+    background: var(--bg-tertiary);
+    min-height: 100%;
+}
+.detail-poster img[src=""] {
+    opacity: 0;
+}
+
+/* ============================================
+   DETAIL PAGE LAYOUT - MOBILE FIXES
+   ============================================ */
+@media (max-width: 768px) {
+    .detail-content {
+        display: flex;
+        flex-direction: row;
+        align-items: flex-start;
+        gap: 16px;
+        padding: 0 16px;
+        margin-top: -80px;
+    }
+    .detail-poster {
+        width: 130px;
+        flex-shrink: 0;
+        border-radius: 12px;
+    }
+    .detail-info {
+        flex: 1;
+        min-width: 0;
+        padding-top: 30px;
+    }
+    .detail-title {
+        font-size: 20px;
+        line-height: 1.2;
+        word-break: break-word;
+        overflow-wrap: break-word;
+        margin-bottom: 10px;
+    }
+    .detail-meta {
+        gap: 6px;
+        margin-bottom: 12px;
+        flex-wrap: wrap;
+    }
+    .detail-meta .badge {
+        padding: 4px 10px;
+        font-size: 11px;
+    }
+    .detail-meta .rating-large {
+        font-size: 14px;
+    }
+    .detail-actions {
+        display: flex;
+        gap: 8px;
+        margin-bottom: 16px;
+        flex-wrap: nowrap;
+        overflow-x: auto;
+        -webkit-overflow-scrolling: touch;
+        scrollbar-width: none;
+        padding-bottom: 4px;
+    }
+    .detail-actions::-webkit-scrollbar {
+        display: none;
+    }
+    .detail-actions .btn {
+        padding: 10px 16px;
+        font-size: 12px;
+        gap: 6px;
+        min-width: max-content;
+    }
+    .detail-actions .btn i {
+        font-size: 14px;
+    }
+    .detail-overview {
+        font-size: 13px;
+        line-height: 1.7;
+        margin-bottom: 20px;
+        word-break: break-word;
+        overflow-wrap: break-word;
+    }
+    .genre-tags {
+        gap: 6px;
+        margin-bottom: 14px;
+    }
+    .genre-tag {
+        padding: 5px 10px;
+        font-size: 10px;
+    }
+    .stats-row {
+        gap: 16px;
+        margin-bottom: 20px;
+    }
+    .stat-value {
+        font-size: 18px;
+    }
+    .stat-label {
+        font-size: 9px;
+    }
+    .detail-sections {
+        padding: 20px 16px;
+    }
+    .cast-grid {
+        display: flex;
+        gap: 12px;
+        overflow-x: auto;
+        overflow-y: hidden;
+        scroll-snap-type: x mandatory;
+        -webkit-overflow-scrolling: touch;
+        scrollbar-width: none;
+        padding: 4px;
+    }
+    .cast-grid::-webkit-scrollbar {
+        display: none;
+    }
+    .cast-card {
+        flex: 0 0 auto;
+        width: 85px;
+        scroll-snap-align: start;
+    }
+    .cast-card img {
+        width: 80px;
+        height: 80px;
+        margin: 0 auto 8px;
+    }
+    .cast-card h4 {
+        font-size: 11px;
+    }
+    .cast-card p {
+        font-size: 10px;
+    }
+    .seasons-section {
+        margin-top: 20px;
+        padding-top: 14px;
+    }
+    .seasons-section h3 {
+        font-size: 16px;
+    }
+    .season-btn {
+        padding: 8px 14px;
+        font-size: 12px;
+    }
+}
+
+@media (max-width: 480px) {
+    .detail-hero {
+        height: 35vh;
+        min-height: 260px;
+    }
+    .detail-content {
+        padding: 0 12px;
+        margin-top: -60px;
+        gap: 12px;
+    }
+    .detail-poster {
+        width: 100px;
+        border-radius: 10px;
+    }
+    .detail-info {
+        padding-top: 20px;
+        width: calc(100% - 112px);
+    }
+    .detail-title {
+        font-size: 17px;
+        margin-bottom: 8px;
+    }
+    .detail-meta .badge {
+        padding: 3px 8px;
+        font-size: 10px;
+    }
+    .detail-meta .rating-large {
+        font-size: 13px;
+        gap: 4px;
+    }
+    .detail-actions .btn {
+        padding: 8px 14px;
+        font-size: 11px;
+        gap: 4px;
+    }
+    .detail-actions .btn i {
+        font-size: 12px;
+    }
+    .detail-overview {
+        font-size: 12px;
+        line-height: 1.6;
+        margin-bottom: 14px;
+    }
+    .genre-tags {
+        gap: 5px;
+        margin-bottom: 12px;
+    }
+    .genre-tag {
+        padding: 4px 8px;
+        font-size: 9px;
+    }
+    .stats-row {
+        gap: 12px;
+        margin-bottom: 16px;
+    }
+    .stat-value {
+        font-size: 15px;
+    }
+    .cast-card {
+        width: 70px;
+    }
+    .cast-card img {
+        width: 64px;
+        height: 64px;
+        margin-bottom: 6px;
+    }
+    .cast-card h4 {
+        font-size: 10px;
+    }
+    .cast-card p {
+        font-size: 9px;
+    }
+}
+
+@media (max-width: 360px) {
+    .detail-poster {
+        width: 85px;
+    }
+    .detail-info {
+        width: calc(100% - 95px);
+        padding-top: 15px;
+    }
+    .detail-title {
+        font-size: 15px;
+    }
+    .detail-actions .btn {
+        padding: 6px 10px;
+        font-size: 10px;
+    }
+    .cast-card {
+        width: 60px;
+    }
+    .cast-card img {
+        width: 56px;
+        height: 56px;
+    }
+}
+
+/* ============================================
+   DETAIL HERO HEIGHT FIX
+   ============================================ */
+.detail-hero {
+    height: 75vh;
+    min-height: 500px;
+    max-height: 700px;
+    position: relative;
+    width: 100%;
+    overflow: hidden;
+}
+
+/* ============================================
+   PAGE DISPLAY FIX
+   ============================================ */
+#page-detail.page.active {
+    display: block !important;
+}
