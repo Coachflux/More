@@ -445,36 +445,21 @@ const PlayerManager = {
 
     // Working embed sources that accept TMDB IDs directly
     sources: [
-        { 
-            name: 'StreamSrc', 
-            movie: (id) => `https://streamsrc.cc/watch/movie/tmdbid=${id}`,
-            tv: (id, s, e) => `https://streamsrc.cc/watch/series/tmdbid=${id}&season=${s}&episode=${e}`
-        },
-        { 
-            name: 'Embed.su', 
-            movie: (id) => `https://embed.su/embed/movie/${id}`,
-            tv: (id, s, e) => `https://embed.su/embed/tv/${id}/${s}/${e}`
-        },
-        { 
-            name: 'VidBinge', 
-            movie: (id) => `https://vidbinge.to/movie/${id}`,
-            tv: (id, s, e) => `https://vidbinge.to/tv/${id}/${s}/${e}`
-        },
-        { 
-            name: 'VidLink', 
-            movie: (id) => `https://vidlink.pro/movie/${id}`,
-            tv: (id, s, e) => `https://vidlink.pro/tv/${id}/${s}/${e}`
-        },
-        { 
-            name: 'MultiEmbed', 
-            movie: (id) => `https://multiembed.mov/directstream.php?video_id=${id}&tmdb=1`,
-            tv: (id, s, e) => `https://multiembed.mov/directstream.php?video_id=${id}&tmdb=1&s=${s}&e=${e}`
-        },
-        { 
-            name: '2Embed', 
-            movie: (id) => `https://www.2embed.cc/embed/${id}`,
-            tv: (id, s, e) => `https://www.2embed.cc/embedtv/${id}&s=${s}&e=${e}`
-        }
+        { name: '2Embed', movie: (id) => `https://www.2embed.cc/embed/${id}`, tv: (id, s, e) => `https://www.2embed.cc/embedtv/${id}&s=${s}&e=${e}` },
+        { name: 'VidLink', movie: (id) => `https://vidlink.pro/movie/${id}`, tv: (id, s, e) => `https://vidlink.pro/tv/${id}/${s}/${e}` },
+        { name: 'Embed.su', movie: (id) => `https://embed.su/embed/movie/${id}`, tv: (id, s, e) => `https://embed.su/embed/tv/${id}/${s}/${e}` },
+        { name: 'AutoEmbed', movie: (id) => `https://autoembed.co/movie/tmdb/${id}`, tv: (id, s, e) => `https://autoembed.co/tv/tmdb/${id}-${s}-${e}` },
+        { name: 'MultiEmbed', movie: (id) => `https://multiembed.mov/directstream.php?video_id=${id}&tmdb=1`, tv: (id, s, e) => `https://multiembed.mov/directstream.php?video_id=${id}&tmdb=1&s=${s}&e=${e}` },
+        { name: 'VidSrc.me', movie: (id) => `https://vidsrc.me/embed/movie/${id}`, tv: (id, s, e) => `https://vidsrc.me/embed/tv/${id}/${s}-${e}` },
+        { name: 'VidSrc.cc', movie: (id) => `https://vidsrc.cc/v2/embed/movie/${id}`, tv: (id, s, e) => `https://vidsrc.cc/v2/embed/tv/${id}/${s}/${e}` },
+        { name: 'VidSrc.to', movie: (id) => `https://vidsrc.to/embed/movie/${id}`, tv: (id, s, e) => `https://vidsrc.to/embed/tv/${id}/${s}/${e}` },
+        { name: 'VidSrc.xyz', movie: (id) => `https://vidsrc.xyz/embed/movie/${id}`, tv: (id, s, e) => `https://vidsrc.xyz/embed/tv/${id}/${s}-${e}` },
+        { name: 'VidSrc.net', movie: (id) => `https://vidsrc.net/embed/movie/${id}`, tv: (id, s, e) => `https://vidsrc.net/embed/tv/${id}/${s}/${e}` },
+        { name: 'VidSrc.in', movie: (id) => `https://vidsrc.in/embed/movie/${id}`, tv: (id, s, e) => `https://vidsrc.in/embed/tv/${id}/${s}/${e}` },
+        { name: 'VidSrc.pm', movie: (id) => `https://vidsrc.pm/embed/movie/${id}`, tv: (id, s, e) => `https://vidsrc.pm/embed/tv/${id}/${s}/${e}` },
+        { name: 'VidSrc.icu', movie: (id) => `https://vidsrc.icu/embed/movie/${id}`, tv: (id, s, e) => `https://vidsrc.icu/embed/tv/${id}/${s}/${e}` },
+        { name: 'VidSrc.dev', movie: (id) => `https://vidsrc.dev/embed/movie/${id}`, tv: (id, s, e) => `https://vidsrc.dev/embed/tv/${id}/${s}/${e}` },
+        { name: 'SuperEmbed', movie: (id) => `https://multiembed.mov/?tmdb=1&video_id=${id}`, tv: (id, s, e) => `https://multiembed.mov/?tmdb=1&video_id=${id}&s=${s}&e=${e}` }
     ],
 
     getUrl(index, id, type, season, episode) {
