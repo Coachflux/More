@@ -449,42 +449,40 @@
                 </div>
 
                 <!-- DETAIL PAGE -->
+                <!-- DETAIL PAGE -->
                 <div class="page" id="page-detail">
                     <div class="detail-hero">
                         <div class="backdrop" id="detail-backdrop"></div>
                     </div>
                     <div class="detail-content">
                         <div class="detail-poster">
-                            <img id="detail-poster-img" src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 200 300'%3E%3Crect fill='%231a1a28' width='200' height='300'/%3E%3Ctext fill='%235a5a72' x='50%25' y='50%25' text-anchor='middle' font-family='Arial' font-size='14'%3ELoading...%3C/text%3E%3C/svg%3E" alt="Loading poster" loading="eager">
+                            <img id="detail-poster-img" src="" alt="" loading="eager">
                         </div>
                         <div class="detail-info">
                             <span class="detail-type-badge" id="detail-type">Movie</span>
                             <h1 class="detail-title" id="detail-title">Loading...</h1>
                             <div class="detail-meta">
                                 <div class="rating-large"><i class="fas fa-star"></i><span id="detail-rating">0.0</span></div>
-                                <span class="badge" id="detail-year">----</span>
-                                <span class="badge" id="detail-runtime">--</span>
+                                <span class="badge" id="detail-year">2024</span>
+                                <span class="badge" id="detail-runtime">2h 30m</span>
                                 <span class="badge" id="detail-episodes" style="display:none"></span>
                             </div>
                             <div class="genre-tags" id="detail-genres"></div>
                             <div class="detail-actions">
-                                <button class="btn btn-primary" onclick="playCurrent()" id="detail-play-btn">
-                                    <i class="fas fa-play"></i> <span>Play Now</span>
-                                </button>
-                                <button class="btn btn-download" onclick="downloadCurrent()" id="detail-download-btn">
-                                    <i class="fas fa-download"></i> <span>Download</span>
+                                <button class="btn btn-primary" onclick="playCurrent()">
+                                    <i class="fas fa-play"></i> Play Now
                                 </button>
                                 <button class="btn btn-watchlist" id="detail-watchlist-btn" onclick="toggleWatchlistCurrent()">
-                                    <i class="fas fa-bookmark"></i> <span>Add to Watchlist</span>
+                                    <i class="fas fa-bookmark"></i> Add to Watchlist
                                 </button>
-                                <button class="btn btn-secondary" onclick="shareCurrent()" id="detail-share-btn">
+                                <button class="btn btn-secondary" onclick="shareCurrent()">
                                     <i class="fas fa-share"></i>
                                 </button>
                             </div>
-                            <p class="detail-overview" id="detail-overview">Fetching details...</p>
+                            <p class="detail-overview" id="detail-overview"></p>
                             <div class="stats-row">
                                 <div class="stat">
-                                    <div class="stat-value" id="detail-status">---</div>
+                                    <div class="stat-value" id="detail-status">Released</div>
                                     <div class="stat-label">Status</div>
                                 </div>
                                 <div class="stat">
@@ -500,6 +498,7 @@
                                     <div class="stat-label">Votes</div>
                                 </div>
                             </div>
+                            <!-- Seasons for TV -->
                             <div class="seasons-section" id="seasons-section" style="display:none">
                                 <h3>Seasons</h3>
                                 <div class="seasons-grid" id="seasons-grid"></div>
@@ -507,22 +506,9 @@
                         </div>
                     </div>
                     <div class="detail-sections">
-                        <div class="ad-banner ad-banner-detail">
-                            <div class="ad-content">
-                                <div class="ad-text">🎬 Watch Without Interruptions</div>
-                                <div class="ad-sub">Our smart server auto-switches for the best experience</div>
-                            </div>
-                            <button class="ad-btn" onclick="UI.showToast('Smart Stream is active','success')">Active</button>
-                            <span class="ad-label">Ad</span>
-                        </div>
                         <div class="section">
                             <div class="section-header"><h2 class="section-title">Top Cast</h2></div>
-                            <div class="cast-grid" id="detail-cast">
-                                <div class="loading-center" style="grid-column:1/-1;min-height:200px;">
-                                    <div class="spinner"></div>
-                                    <p>Loading cast...</p>
-                                </div>
-                            </div>
+                            <div class="cast-grid" id="detail-cast"></div>
                         </div>
                         <div class="section" id="related-section">
                             <div class="section-header"><h2 class="section-title">More Like This</h2></div>
