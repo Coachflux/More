@@ -495,7 +495,7 @@ const PlayerManager = {
 
         if (iframe) {
             // CRITICAL: Sandbox attributes block redirects/popups while allowing video
-            iframe.setAttribute('sandbox', 'allow-scripts allow-same-origin allow-presentation allow-autoplay');
+            iframe.setAttribute('allow-scripts allow-same-origin allow-presentation allow-autoplay');
             iframe.setAttribute('referrerpolicy', 'no-referrer');
             iframe.setAttribute('loading', 'eager');
             iframe.src = src;
